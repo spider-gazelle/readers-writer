@@ -25,12 +25,11 @@ class RWLock
       yield
     ensure
       @reader_lock.synchronize do
-        @readers -= 1
-
         # NOTE:: we cast index as it will always return an index
         @fibers_lock.synchronize do
           @fibers.delete_at(@fibers.index(current_fiber).as(Int32))
         end
+        @readers -= 1
       end
     end
   end
