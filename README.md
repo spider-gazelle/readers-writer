@@ -32,4 +32,9 @@ rwlock.read { puts balance.inspect }
 rwlock.write { balance += 10 }
 rwlock.synchronize { balance += 10 }
 
+# Reentrant
+rwlock.read do
+  rwlock.write { balance = 100 } if balance > 100
+end
+
 ```
