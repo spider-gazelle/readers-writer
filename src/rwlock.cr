@@ -3,7 +3,8 @@ require "mutex"
 class RWLock
   def initialize
     @readers = 0
-    @fibers = [] of Fiber
+    @reading = [] of Fiber
+    @writing = [] of Fiber
     @reader_lock = Mutex.new
     @writer_lock = Mutex.new
     @fibers_lock = Mutex.new
@@ -18,7 +19,7 @@ class RWLock
       @writer_lock.synchronize do
         @reader_lock.synchronize do
           @readers += 1
-          @fibers_lock.synchronize { @fibers << current_fiber }
+          @fibers_lock.synchronize { @reading << current_fiber }
         end
       end
 
@@ -27,7 +28,7 @@ class RWLock
       @reader_lock.synchronize do
         # NOTE:: we cast index as it will always return an index
         @fibers_lock.synchronize do
-          @fibers.delete_at(@fibers.index(current_fiber).as(Int32))
+          @reading.delete_at(@reading.index(current_fiber).as(Int32))
         end
         @readers -= 1
       end
@@ -44,33 +45,29 @@ class RWLock
   def write
     write_ready = false
     current_fiber = Fiber.current
-    last_check = -1
 
-    @writer_lock.synchronize do
-      loop do
-        @reader_lock.synchronize do
-          @fibers_lock.synchronize do
-            check = @fibers.size
-            if last_check != check
-              last_check = check
-              write_ready = true
-
-              @fibers.each do |fiber|
-                if fiber != current_fiber
-                  write_ready = false
-                  break
-                end
-              end
-            end
-          end
-        end
-        break if write_ready
-
-        # Wait a short amount of time
-        Fiber.yield
+    begin
+      @fibers_lock.synchronize do
+        @writing << current_fiber
       end
 
-      yield
+      @writer_lock.synchronize do
+        loop do
+          @reader_lock.synchronize do
+            @fibers_lock.synchronize { write_ready = (@reading - @writing).size == 0 }
+          end
+          break if write_ready
+
+          # Wait a short amount of time
+          Fiber.yield
+        end
+
+        yield
+      end
+    ensure
+      @fibers_lock.synchronize do
+        @writing.delete_at(@writing.index(current_fiber).as(Int32))
+      end
     end
   end
 end
