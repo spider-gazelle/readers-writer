@@ -44,17 +44,22 @@ class RWLock
   def write
     write_ready = false
     current_fiber = Fiber.current
+    last_check = -1
 
     @writer_lock.synchronize do
       loop do
         @reader_lock.synchronize do
-          write_ready = true
-
           @fibers_lock.synchronize do
-            @fibers.each do |fiber|
-              if fiber != current_fiber
-                write_ready = false
-                break
+            check = @fibers.size
+            if last_check != check
+              last_check = check
+              write_ready = true
+
+              @fibers.each do |fiber|
+                if fiber != current_fiber
+                  write_ready = false
+                  break
+                end
               end
             end
           end
