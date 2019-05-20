@@ -24,4 +24,27 @@ describe RWLock do
 
     lock.readers.should eq(1)
   end
+
+  it "should be reentrant" do
+    lock = RWLock.new
+    did_write = false
+
+    spawn do
+      lock.read { sleep 1 }
+    end
+
+    Fiber.yield
+
+    lock.read do
+      lock.readers.should eq(2)
+
+      # then we decide that we need to modify something
+      lock.write do
+        lock.readers.should eq(1)
+        did_write = true
+      end
+    end
+
+    did_write.should eq(true)
+  end
 end
