@@ -14,15 +14,15 @@ describe RWLock do
 
     Fiber.yield
 
-    lock.readers.should eq(2)
-    lock.write { lock.readers.should eq(0) }
+    lock.@reading.size.should eq(2)
+    lock.write { lock.@reading.size.should eq(0) }
     spawn do
       lock.read { sleep 1 }
     end
 
     Fiber.yield
 
-    lock.readers.should eq(1)
+    lock.@reading.size.should eq(1)
   end
 
   it "should be reentrant" do
@@ -36,11 +36,11 @@ describe RWLock do
     Fiber.yield
 
     lock.read do
-      lock.readers.should eq(2)
+      lock.@reading.size.should eq(2)
 
       # then we decide that we need to modify something
       lock.write do
-        lock.readers.should eq(1)
+        lock.@reading.size.should eq(1)
         did_write = true
       end
     end
