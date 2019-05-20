@@ -6,6 +6,7 @@ class RWLock
     @fibers = [] of Fiber
     @reader_lock = Mutex.new
     @writer_lock = Mutex.new
+    @fibers_lock = Mutex.new
   end
 
   getter readers
@@ -17,7 +18,7 @@ class RWLock
       @writer_lock.synchronize do
         @reader_lock.synchronize do
           @readers += 1
-          @fibers << current_fiber
+          @fibers_lock.synchronize { @fibers << current_fiber }
         end
       end
 
@@ -27,7 +28,9 @@ class RWLock
         @readers -= 1
 
         # NOTE:: we cast index as it will always return an index
-        @fibers.delete_at(@fibers.index(current_fiber).as(Int32))
+        @fibers_lock.synchronize do
+          @fibers.delete_at(@fibers.index(current_fiber).as(Int32))
+        end
       end
     end
   end
@@ -47,10 +50,13 @@ class RWLock
       loop do
         @reader_lock.synchronize do
           write_ready = true
-          @fibers.each do |fiber|
-            if fiber != current_fiber
-              write_ready = false
-              break
+
+          @fibers_lock.synchronize do
+            @fibers.each do |fiber|
+              if fiber != current_fiber
+                write_ready = false
+                break
+              end
             end
           end
         end
