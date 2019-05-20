@@ -5,7 +5,6 @@
 Allows any number of concurrent readers, but only one concurrent writer (And while the "write" lock is taken, no read locks can be obtained either)
 Access is fair. (read, write, read, write requests will occur in the order they arrived.)
 
-
 ## Installation
 
 1. Add the dependency to your `shard.yml`:
