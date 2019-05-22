@@ -36,12 +36,15 @@ class RWLock
     write_ready = false
     current_fiber = Fiber.current
 
-    begin
-      @reader_lock.synchronize do
-        @writing << current_fiber
-      end
+    # Marks this fiber as safe to begin a write
+    @reader_lock.synchronize do
+      @writing << current_fiber
+    end
 
-      @writer_lock.synchronize do
+    # There might be another fiber that already has this lock
+    @writer_lock.synchronize do
+      begin
+        # Loop until there are no more readers
         loop do
           @reader_lock.synchronize { write_ready = (@reading - @writing).size == 0 }
           break if write_ready
@@ -51,10 +54,13 @@ class RWLock
         end
 
         yield
-      end
-    ensure
-      @reader_lock.synchronize do
-        @writing.delete_at(@writing.index(current_fiber).as(Int32))
+
+      ensure
+        @reader_lock.synchronize do
+          # Supports being called multiple times so only want to delete a single
+          # entry of the current fiber
+          @writing.delete_at(@writing.index(current_fiber).as(Int32))
+        end
       end
     end
   end
