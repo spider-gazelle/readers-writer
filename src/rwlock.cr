@@ -5,7 +5,7 @@ class RWLock
     @reading = [] of Fiber
     @writing = [] of Fiber
     @reader_lock = Mutex.new
-    @writer_lock = Mutex.new
+    @writer_lock = Mutex.new(:reentrant)
   end
 
   # Read locks
@@ -54,7 +54,6 @@ class RWLock
         end
 
         yield
-
       ensure
         @reader_lock.synchronize do
           # Supports being called multiple times so only want to delete a single
