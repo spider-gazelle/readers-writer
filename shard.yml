@@ -1,5 +1,6 @@
 name: rwlock
-version: 1.0.6
+version: 1.0.7
+crystal: ">= 0.36.1"
 
 authors:
   - Stephen von Takach <steve@acaprojects.com>
