@@ -1,6 +1,6 @@
 # Readers Writer Lock
 
-[![Build Status](https://travis-ci.org/spider-gazelle/readers-writer.svg?branch=master)](https://travis-ci.org/spider-gazelle/readers-writer)
+[![CI](https://github.com/spider-gazelle/readers-writer/actions/workflows/ci.yml/badge.svg)](https://github.com/spider-gazelle/readers-writer/actions/workflows/ci.yml)
 
 Allows any number of concurrent readers, but only one concurrent writer (And while the "write" lock is taken, no read locks can be obtained either)
 Access is fair. (read, write, read, write requests will occur in the order they arrived.)
